@@ -1,8 +1,11 @@
 ﻿using DTO;
 using System;
 using System.Collections.Generic;
+using System.Data.Entity.Validation;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Web;
 using System.Web.Mvc;
 using Transortes_MVC_gen13.Models;
@@ -112,6 +115,189 @@ namespace Transortes_MVC_gen13.Controllers
             catch (Exception ex)
             {
                 //en caso de que ocurra un excepción, voy a mostrar un mesj con en error (Sweet Alert), voy a devolverle a la vista le modelo que causo el conflicto ( return View(model)) y vuelvo a cargar el DDL para que estén disponibles esas opciones( cargarDDL() )
+                //Sweet Alert
+                cargarDDL();
+                return View(model);
+            }
+        }
+
+        //GET: Editar_Camion/{id}
+        public ActionResult Editar_Camion(int id)
+        {
+            if (id > 0)//validar que realmente llegue un ID válido
+            {
+                Camiones_DTO camion = new Camiones_DTO();//creo una instancia del tipo DTO ara pasar información desde el contexto a la vista cn ayuda de EF y LinQ
+                using (TransportesEntities context = new TransportesEntities())//creo una instancia de un solo uso de mi contexto
+                {
+                    //busco a aquel elemento que coincida con el ID
+                    //Bajo método (usando LinQ)
+                    //no puedo colocar directamente un tipo de datos (modelo original) en un DTO, por lo que, primero me valgo de recuperarlo y posteriormente asginos sus valores (mapeo)
+                    var camion_aux = context.Camiones.Where(x => x.ID_Camion == id).FirstOrDefault();
+                    var camion_aux2 = context.Camiones.FirstOrDefault(x => x.ID_Camion == id);
+
+                    camion.Matricula = camion_aux.Matricula;
+                    camion.Marca = camion_aux.Marca;
+                    camion.Modelo = camion_aux.Modelo;
+                    camion.Capacidad = camion_aux.Capacidad;
+                    camion.Kilometraje = camion_aux.Kilometraje;
+                    camion.Tipo_Camion = camion_aux.Tipo_Camion;
+                    camion.Disponibilidad = camion_aux.Disponibilidad;
+                    camion.UrlFoto = camion_aux.UrlFoto;
+                    camion.ID_Camion = camion_aux.ID_Camion;
+
+                    //bajo una consulta (usando LinQ)
+                    //caundo hago una consulta directa, tengo la oportunidad de asignar valores a tipos de datos más complejos o diferentes, incluso, pudiendo crear nuevos datos a partir de datos existentes (instanicas de clases)
+                    camion = (from c in context.Camiones
+                              where c.ID_Camion == id
+                              select new Camiones_DTO()
+                              {
+                                  ID_Camion = c.ID_Camion,
+                                  Matricula = c.Matricula,
+                                  Marca = c.Marca,
+                                  Modelo = c.Modelo,
+                                  Capacidad = c.Capacidad,
+                                  Kilometraje = c.Kilometraje,
+                                  Tipo_Camion = c.Tipo_Camion,
+                                  Disponibilidad = c.Disponibilidad,
+                                  UrlFoto = c.UrlFoto
+                              }).FirstOrDefault();
+                }//cierre el "using(context)"
+
+                if (camion == null)//valido si realmente reuperé los datos de la BD
+                {
+                    //sweet alert
+                    return RedirectToAction("Index");
+                }
+                //si todo sale bien, envió a la vista con los datos a Editar
+                ViewBag.Titulo = $"Editar Camión #{camion.ID_Camion}";
+                cargarDDL();
+                return View(camion);
+            }
+            else
+            {
+                //Sweet Alert
+                return RedirectToAction("Index");
+            }
+        }
+
+        //POST: Editar_Camion
+        [HttpPost]
+        public ActionResult Editar_Camion(Camiones_DTO model, HttpPostedFileBase imagen)
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    using (TransportesEntities context = new TransportesEntities())
+                    {
+                        var camion = new Camiones();
+
+                        camion.ID_Camion = model.ID_Camion;
+                        camion.Matricula = model.Matricula;
+                        camion.Marca = model.Marca;
+                        camion.Modelo = model.Modelo;
+                        camion.Capacidad = model.Capacidad;
+                        camion.Tipo_Camion = model.Tipo_Camion;
+                        camion.Disponibilidad = model.Disponibilidad;
+                        camion.Kilometraje = model.Kilometraje;
+
+                        if (imagen != null && imagen.ContentLength > 0)
+                        {
+                            string filename = Path.GetFileName(imagen.FileName);
+                            string pathdir = Server.MapPath("~/Assets/Imagenes/Camiones/");
+                            if (model.UrlFoto.Length == 0)
+                            {
+                                //la imagen en la BD es null y hay que darle la imagen
+                                if (!Directory.Exists(pathdir))
+                                {
+                                    Directory.CreateDirectory(pathdir);
+                                }
+
+                                imagen.SaveAs(pathdir + filename);
+                                camion.UrlFoto = "/Assets/Imagenes/Camiones/" + filename;
+                            }
+                            else
+                            {
+                                //validar si es la misma o es nueva
+                                if (model.UrlFoto.Contains(filename))
+                                {
+                                    //es la misma
+                                    camion.UrlFoto = "/Assets/Imagenes/Camiones/" + filename;
+                                }
+                                else
+                                {
+                                    //es diferente
+                                    if (!Directory.Exists(pathdir))
+                                    {
+                                        Directory.CreateDirectory(pathdir);
+                                    }
+
+                                    //Borro la imagen anterios
+                                    //valido si existe
+
+                                    try
+                                    {
+                                        string pathdir_old = Server.MapPath("~" + model.UrlFoto); //busco la imagen que catualmente tiene el camión
+                                        if (System.IO.File.Exists(pathdir_old)) //valido si existe dicho archivo
+                                        {
+                                            //procedo a eliminarlo
+                                            System.IO.File.Delete(pathdir_old);
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        //Sweet Alert
+                                    }
+
+                                    imagen.SaveAs(pathdir + filename);
+                                    camion.UrlFoto = "/Assets/Imagenes/Camiones/" + filename;
+                                }
+                            }
+                        }
+                        else //si no hya una nueva imagen, paso la misma
+                        {
+                            camion.UrlFoto = model.UrlFoto;
+                        }
+
+                        //Guardar cambios, validar excepciones, redirigir
+                        //actualizar el estado de nuestro elemento
+                        //.Entry() registrar la entrada de nueva información al contexto y notificar un cambio de estado usando System.Data.Entity.EntityState.Modified
+                        context.Entry(camion).State = System.Data.Entity.EntityState.Modified;
+                        //impactamos la BD
+                        try
+                        {
+                            context.SaveChanges();
+                        }
+                        //agregar using desde 'using System.Data.Entity.Validation;'
+                        catch (DbEntityValidationException ex)
+                        {
+                            string resp = "";
+                            //recorro todos los posibles errores de la Entidad Referencial
+                            foreach (var error in ex.EntityValidationErrors)
+                            {
+                                //recorro los detalles de cada error
+                                foreach (var validationError in error.ValidationErrors)
+                                {
+                                    resp += "Error en la Entidad: " + error.Entry.Entity.GetType().Name;
+                                    resp += validationError.PropertyName;
+                                    resp += validationError.ErrorMessage;
+                                }
+                            }
+                            //Sweet Alert
+                        }
+                        //Sweet Alert
+                        return RedirectToAction("Index");
+                    }
+                }
+                else
+                {
+                    //Sweet Alert
+                    cargarDDL();
+                    return View(model);
+                }
+            }
+            catch (Exception ex)
+            {
                 //Sweet Alert
                 cargarDDL();
                 return View(model);
