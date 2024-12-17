@@ -304,6 +304,46 @@ namespace Transortes_MVC_gen13.Controllers
             }
         }
 
+        //GET: Eliminar_Camion/{id}
+        public ActionResult Eliminar_Camion(int id)
+        {
+            try
+            {
+                using (TransportesEntities context = new TransportesEntities())
+                {
+                    //voy a recuperar el camión que deseo eliminar
+                    var camion = context.Camiones.FirstOrDefault(x => x.ID_Camion == id);
+                    //valido si realmente existe dicho camión
+                    if (camion == null)
+                    {
+                        //me voy pa' tras
+                        //Sweet alert
+                        SweetAlert("No encontrado", $"No hemos encontrado el camión con identificador {id}", NotificationType.info);
+                        return RedirectToAction("Index");
+                    }
+
+                    //procedo a eliminar
+                    context.Camiones.Remove(camion);
+                    context.SaveChanges();
+                    //Sweet alert
+                    SweetAlert("Eliminado", "Camión eliminado con éxito", NotificationType.success);
+                    return RedirectToAction("Index");
+                }
+            }
+            catch (Exception ex)
+            {
+                //Sweet Alert
+                SweetAlert("Opsss...", $"Ha ocurrido un Error: {ex.Message}", NotificationType.error);
+                return RedirectToAction("Index");
+            }
+        }
+        //GET: ConfirmarEliminar
+        public ActionResult Confirmar_Eliminar(int id)
+        {
+            SweetAlert_Eliminar(id);
+            return RedirectToAction("Index");
+        }
+
         #region Auxiliares
         private class Opciones
         {
@@ -320,6 +360,54 @@ namespace Transortes_MVC_gen13.Controllers
             };
 
             ViewBag.ListaTipos = lista_opciones;
+        }
+        #endregion
+
+        #region Sweet Alert
+        //Declaración de un HTMLHelper personalizado: Digase de aquél método auxilar que me permite construir código HTML/JS en tiempo real basado en las acciones del Razor/Controller
+        private void SweetAlert(string title, string msg, NotificationType type)
+        {
+            var script = "<script languaje='javascript'> " +
+             "Swal.fire({" +
+             "title: '" + title + "'," +
+             "text: '" + msg + "'," +
+             "icon: '" + type + "'" +
+             "});" +
+             "</script>";
+            //TempData funciona como un ViewBag, pasando información del controlador a cualquier parte de mi proyecto, siendo este,  más observable y con un tiempo de vida mayor
+            TempData["sweeralert"] = script;
+        }
+
+        private void SweetAlert_Eliminar(int id)
+        {
+            var script = "<script languaje='javascript'>" +
+                "Swal.fire({" +
+                "title: '¿Estás Seguro?'," +
+                "text: 'Estás apunto de Eliminar el Camión: " + id.ToString() + "'," +
+                "icon: 'info'," +
+                "showDenyButton: true," +
+                "showCancelButton: true," +
+                "confirmButtonText: 'Eliminar'," +
+                "denyButtonText: 'Cancelar'" +
+                "}).then((result) => {" +
+                "if (result.isConfirmed) {  " +
+                "window.location.href = '/Camiones/Eliminar_Camion/" + id + "';" +
+                "} else if (result.isDenied) {  " +
+                "Swal.fire('Se ha cancelado la operación','','info');" +
+                "}" +
+                "});" +
+                "</script>";
+
+            TempData["sweeralert"] = script;
+        }
+
+        public enum NotificationType
+        {
+            error,
+            success,
+            warning,
+            info,
+            question
         }
         #endregion
     }
