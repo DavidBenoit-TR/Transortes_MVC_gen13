@@ -5,6 +5,8 @@ VisualStudioVersion = 17.12.35506.116 d17.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Transortes_MVC_gen13", "Transortes_MVC_gen13.csproj", "{CCD03E42-6873-4070-802F-4B0650FE8736}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DTO", "DTO\DTO.csproj", "{10B83778-0FC2-4767-A2F9-72ACDC801A2A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{CCD03E42-6873-4070-802F-4B0650FE8736}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CCD03E42-6873-4070-802F-4B0650FE8736}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CCD03E42-6873-4070-802F-4B0650FE8736}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10B83778-0FC2-4767-A2F9-72ACDC801A2A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10B83778-0FC2-4767-A2F9-72ACDC801A2A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10B83778-0FC2-4767-A2F9-72ACDC801A2A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10B83778-0FC2-4767-A2F9-72ACDC801A2A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
